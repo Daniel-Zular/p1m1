@@ -1,0 +1,55 @@
+// Especifica a versão do compilador Solidity. Isto garante que seu contrato seja compilado com uma versão compatível.
+pragma solidity ^0.8.0;
+
+// Contrato 'LearningSolidity' que demonstra vários conceitos comuns em Solidity
+contract LearningSolidity {
+    // Variáveis de Estado
+    uint public dataStored; // Armazena um número. 'uint' representa um inteiro sem sinal.
+    address public owner; // Armazena o endereço do proprietário do contrato.
+
+    // Mapeamento de endereços para saldos. Usado para associar saldos a endereços específicos.
+    mapping(address => uint) public balances;
+
+    // Eventos permitem que clientes externos reajam a mudanças de contrato específicas que você declara.
+    event DataUpdated(uint oldData, uint newData);
+
+    // Modificador para restringir a execução de uma função ao proprietário do contrato.
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Caller is not the owner");
+        _;
+    }
+
+    // Função construtora que é executada uma vez quando o contrato é criado.
+    // Inicializa o contrato com o 'owner' sendo a pessoa que implantou o contrato.
+    constructor() {
+        owner = msg.sender;
+    }
+
+    // Função para armazenar um número no contrato. Qualquer um pode chamar.
+    function store(uint _data) public {
+        emit DataUpdated(dataStored, _data); // Emite um evento com o antigo e o novo valor.
+        dataStored = _data; // Atualiza a variável de estado 'dataStored'.
+    }
+
+    // Função que permite ao proprietário do contrato retirar todo o Ether contido nele.
+    function withdraw() public onlyOwner {
+        payable(msg.sender).transfer(address(this).balance);
+    }
+
+    // Função para receber Ether. Os contratos de fallback são executados quando o contrato recebe Ether sem nenhuma outra informação.
+    receive() external payable {
+        balances[msg.sender] += msg.value; // Atualiza o saldo do remetente.
+    }
+
+    // Função para consultar o saldo do contrato.
+    function getBalance() public view returns (uint) {
+        return address(this).balance; // 'address(this)' refere-se ao endereço do contrato atual.
+    }
+
+    // Função que permite a transferência de Ether de um endereço para outro dentro do contrato.
+    function transfer(address _to, uint _amount) public {
+        require(balances[msg.sender] >= _amount, "Insufficient balance"); // Verifica se o remetente tem saldo suficiente.
+        balances[msg.sender] -= _amount; // Subtrai o montante do saldo do remetente.
+        balances[_to] += _amount; // Adiciona o montante ao saldo do destinatário.
+    }
+}
